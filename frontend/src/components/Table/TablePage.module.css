@@ -1,0 +1,91 @@
+.monitoringTables {
+  font-family: "Open Sans";
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: #eee;
+  padding: 24px;
+  border-radius: 8px;
+}
+
+.product {
+  border-radius: 8px;
+  background: #fff;
+  padding: 24px;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+.product .hover:hover {
+  background: #eee !important;
+}
+.product div {
+  font: 400 14px "Open Sans";
+}
+.product__header, .product__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding: 12px 0;
+}
+.product__header div:nth-child(n+2), .product__content div:nth-child(n+2) {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+.product .pagination {
+  margin-top: 16px;
+  color: #555;
+}
+.product .pagination__block {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+.product .pagination__scroll-alert {
+  text-align: center;
+  display: none;
+  font: 400 14px "Open Sans";
+}
+.product .pagination :global(.MuiPaginationItem-icon) {
+  fill: rgb(146, 161, 168) !important;
+}
+.product .pagination :global(.MuiButtonBase-root) {
+  font-family: "Open Sans", sans-serif !important;
+}
+.product .pagination :global(.MuiPaginationItem-root) {
+  min-width: 32px !important;
+}
+.product__block-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.product .pagination button {
+  border-radius: 4px;
+  padding: 5px 8px;
+  cursor: pointer;
+  display: flex;
+}
+.product .pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.product .view {
+  cursor: pointer;
+}
+@media (max-width: 465px) {
+  .product .pagination__block {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+  .product .pagination__scroll-alert {
+    margin-bottom: 10px;
+    display: block;
+  }
+}/*# sourceMappingURL=PopularProductsTable.module.css.map */
