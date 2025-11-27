@@ -1,8 +1,7 @@
-// src/types/monitoring.ts
 
 export interface Location {
     type: "Point";
-    coordinates: [number, number]; // [longitude, latitude]
+    coordinates: [number, number]; 
 }
 
 export interface Metadata {
