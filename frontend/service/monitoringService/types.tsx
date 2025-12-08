@@ -1,14 +1,9 @@
-
-export interface Location {
-    type: "Point";
-    coordinates: [number, number]; 
-}
-
-export interface Metadata {
-    data_source: string;
-    created_at: string;
-    updated_at: string;
-    last_measurement: string;
+export interface PollutantValue {
+    pollutant: string;
+    value: number;
+    unit: string;
+    averaging_period?: string;
+    quality_flag?: string;
 }
 
 export interface Station {
@@ -16,31 +11,34 @@ export interface Station {
     station_id: string;
     city_name: string;
     station_name: string;
-    local_name: string;
-    timezone: string;
-    platform_name: string;
-    status: "active" | "inactive" | "maintenance";
-    measured_parameters: string[];
-    createdAt: string;
-    location: Location;
-    metadata: Metadata;
-}
+    local_name?: string;
+    timezone?: string;
+    platform_name?: string;
 
-export interface Pollutant {
-    pollutant: string;
-    value: number;
-    unit: string;
-    averaging_period: string;
-    quality_flag: string;
+    location?: {
+        type: string;
+        coordinates: number[];
+    };
+
+    status: "active" | "inactive";
+
+    last_measurement_at?: string;
+
+    createdAt: string;
+    updatedAt?: string;
 }
 
 export interface Measurement {
     _id: string;
     station_id: string;
     measurement_time: string;
-    pollutants: Pollutant[];
-    createdAt: string;
-    updatedAt: string;
+    pollutants: PollutantValue[];
+
+    metadata?: {
+        source?: string;
+        client_ip?: string;
+        original_data?: any;
+    };
 }
 
 export interface PaginationInfo {
@@ -53,5 +51,6 @@ export interface PaginationInfo {
 export interface ApiResponse<T> {
     success: boolean;
     data: T[];
-    pagination: PaginationInfo;
+    pagination?: PaginationInfo;
+    error?: string;
 }

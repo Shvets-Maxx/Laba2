@@ -1,11 +1,10 @@
-// MonitoringTables.tsx (фінальна версія)
-
 import React, { useState } from "react";
 import style from "./TablePage.module.sass";
 
 import {
     useStationsRoutes,
     useMeasurementsRoutes,
+    useSyncSaveEcoBot,
 } from "../../../service/monitoringService/monitoringServiceHooks";
 
 import Pagination from "@mui/material/Pagination";
@@ -23,10 +22,9 @@ const TablePaginationInfo: React.FC<{ info: PaginationInfo }> = ({ info }) => {
     const { page, limit, total } = info;
     const start = (page - 1) * limit + 1;
     const end = Math.min(page * limit, total);
-
     return (
         <p>
-            Showing {start}-{end} of {total} entries
+            Показано {start}-{end} з {total} записів
         </p>
     );
 };
@@ -35,8 +33,20 @@ function MonitoringTables() {
     const [stationsPage, setStationsPage] = useState(1);
     const [measurementsPage, setMeasurementsPage] = useState(1);
 
-    const stationsQuery = useStationsRoutes(stationsPage);
-    const measurementsQuery = useMeasurementsRoutes(measurementsPage);
+    const [stationSearch, setStationSearch] = useState("");
+    const [stationQuery, setStationQuery] = useState("");
+
+    const [measurementSearch, setMeasurementSearch] = useState("");
+    const [measurementQuery, setMeasurementQuery] = useState("");
+
+    const stationsQuery = useStationsRoutes(stationsPage, stationQuery);
+    const measurementsQuery = useMeasurementsRoutes(
+        measurementsPage,
+        measurementQuery
+    );
+
+    const { mutate: syncSaveEcoBot, isPending: isSyncing } =
+        useSyncSaveEcoBot();
 
     const stations = (stationsQuery.data?.data as Station[]) || [];
     const stationsPagination = stationsQuery.data?.pagination;
@@ -47,6 +57,22 @@ function MonitoringTables() {
     const measurementsPagination = measurementsQuery.data?.pagination;
     const totalMeasurementsPages = measurementsPagination?.pages || 1;
     const totalMeasurementsEntries = measurementsPagination?.total || 0;
+
+    const handleStationSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            setStationQuery(stationSearch);
+            setStationsPage(1);
+        }
+    };
+
+    const handleMeasurementSearch = (
+        e: React.KeyboardEvent<HTMLInputElement>
+    ) => {
+        if (e.key === "Enter") {
+            setMeasurementQuery(measurementSearch);
+            setMeasurementsPage(1);
+        }
+    };
 
     const handleStationsPageChange = (
         _e: React.ChangeEvent<unknown>,
@@ -63,84 +89,162 @@ function MonitoringTables() {
     };
 
     if (stationsQuery.isLoading || measurementsQuery.isLoading) {
-        return <div>Loading data...</div>;
+        return <div style={{ padding: 20 }}>Завантаження даних...</div>;
     }
 
     if (stationsQuery.isError || measurementsQuery.isError) {
         return (
-            <div>
-                Error loading data:{" "}
-                {stationsQuery.error?.message ||
-                    measurementsQuery.error?.message ||
-                    "Unknown error"}
+            <div style={{ padding: 20, color: "red" }}>
+                Помилка завантаження даних.
             </div>
         );
     }
 
     return (
-        <div className={style.monitoringTables}>
-            <div className={style.product}>
-                <h2>📊 Станції моніторингу ({totalStationsEntries})</h2>
-                {stationsQuery.isFetching && (
-                    <div style={{ color: "blue" }}>Updating Stations...</div>
-                )}
+        <div className={style["monitoring-page"]}>
+            <div className={style["monitoring-page__header"]}>
+                <h1 className={style["monitoring-page__title"]}>
+                    Моніторинг Якості Повітря
+                </h1>
+                <button
+                    onClick={() => syncSaveEcoBot()}
+                    disabled={isSyncing}
+                    className={style["monitoring-page__btn"]}
+                >
+                    {isSyncing
+                        ? "Синхронізація..."
+                        : "Синхронізувати SaveEcoBot"}
+                </button>
+            </div>
 
-                <div style={{ overflowX: "scroll" }}>
-                    <div style={{ minWidth: 780 }}>
-                        <div className={style.product__header}>
-                            <div style={{ width: "150px" }}>
-                                <p>ID Станції</p>
+            <div className={style["table-section"]}>
+                <div className={style["table-section__header"]}>
+                    <h2 className={style["table-section__title"]}>
+                        Станції моніторингу ({totalStationsEntries})
+                    </h2>
+
+                    <div className={style["table-section__controls"]}>
+                        <input
+                            type="text"
+                            placeholder="Пошук по місту (Enter)..."
+                            className={style["table-section__search-input"]}
+                            value={stationSearch}
+                            onChange={(e) => setStationSearch(e.target.value)}
+                            onKeyDown={handleStationSearch}
+                        />
+                        {stationQuery && (
+                            <button
+                                className={style["table-section__clear-btn"]}
+                                onClick={() => {
+                                    setStationSearch("");
+                                    setStationQuery("");
+                                    setStationsPage(1);
+                                }}
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                <div className={style["data-table"]}>
+                    <div className={style["data-table__inner"]}>
+                        <div className={style["data-table__header"]}>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w120"]}`}
+                            >
+                                ID
                             </div>
-                            <div style={{ width: "150px" }}>
-                                <p>Місто</p>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w120"]}`}
+                            >
+                                Місто
                             </div>
-                            <div style={{ width: "100%", maxWidth: "250px" }}>
-                                <p>Назва Станції</p>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w200"]}`}
+                            >
+                                Назва
                             </div>
-                            <div style={{ width: 100 }}>
-                                <p>Статус</p>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w100"]}`}
+                            >
+                                Платформа
                             </div>
-                            <div style={{ width: 100 }}>
-                                <p>Створено</p>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w150"]}`}
+                            >
+                                Координати
+                            </div>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w100"]}`}
+                            >
+                                Статус
+                            </div>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w100"]}`}
+                            >
+                                Створено
                             </div>
                         </div>
+
                         {stations.length > 0 ? (
-                            stations.map((station, idx) => (
+                            stations.map((station) => (
                                 <div
-                                    className={style.product__content}
-                                    key={station._id || idx}
+                                    className={style["data-table__row"]}
+                                    key={station._id || station.station_id}
                                 >
-                                    <div style={{ width: "150px" }}>
-                                        <p>{station.station_id}</p>
-                                    </div>
-                                    <div style={{ width: "150px" }}>
-                                        <p>{station.city_name}</p>
+                                    <div
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w120"]}`}
+                                        title={station.station_id}
+                                    >
+                                        {station.station_id}
                                     </div>
                                     <div
-                                        style={{
-                                            width: "100%",
-                                            maxWidth: "250px",
-                                        }}
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w120"]}`}
                                     >
-                                        <p>{station.station_name}</p>
+                                        {station.city_name}
                                     </div>
-                                    <div style={{ width: 100 }}>
+                                    <div
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w200"]}`}
+                                    >
+                                        {station.station_name}
+                                    </div>
+                                    <div
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w100"]}`}
+                                    >
+                                        {station.platform_name || "-"}
+                                    </div>
+                                    <div
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w150"]} ${style["data-table__cell--text-sm"]}`}
+                                    >
+                                        {station.location?.coordinates
+                                            ? `${station.location.coordinates[1].toFixed(
+                                                  4
+                                              )}, ${station.location.coordinates[0].toFixed(
+                                                  4
+                                              )}`
+                                            : "N/A"}
+                                    </div>
+                                    <div
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w100"]}`}
+                                    >
                                         <span
-                                            style={{
-                                                color:
-                                                    station.status === "active"
-                                                        ? "#49AB3A"
-                                                        : "#EF4D56",
-                                                fontWeight: 600,
-                                            }}
+                                            className={`${
+                                                style["data-table__status"]
+                                            } ${
+                                                style[
+                                                    `data-table__status--${station.status}`
+                                                ]
+                                            }`}
                                         >
-                                            {station.status
-                                                .charAt(0)
-                                                .toUpperCase() +
-                                                station.status.slice(1)}
+                                            {station.status === "active"
+                                                ? "Активна"
+                                                : "Неактивна"}
                                         </span>
                                     </div>
-                                    <div style={{ width: 100 }}>
+                                    <div
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w100"]} ${style["data-table__cell--text-sm"]}`}
+                                    >
                                         {new Date(
                                             station.createdAt
                                         ).toLocaleDateString("uk-UA")}
@@ -148,20 +252,25 @@ function MonitoringTables() {
                                 </div>
                             ))
                         ) : (
-                            <div
-                                className={style.product__content}
-                                style={{ textAlign: "center", padding: "20px" }}
-                            >
+                            <div className={style["data-table__empty"]}>
                                 <p>Станції не знайдено.</p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className={style.pagination}>
-                    <div className={style.pagination__block}>
+                <div className={style["table-section__pagination"]}>
+                    <div className={style["table-section__pagination-wrapper"]}>
                         {stationsPagination && (
-                            <TablePaginationInfo info={stationsPagination} />
+                            <div
+                                className={
+                                    style["table-section__pagination-info"]
+                                }
+                            >
+                                <TablePaginationInfo
+                                    info={stationsPagination}
+                                />
+                            </div>
                         )}
                         <Stack spacing={2}>
                             <Pagination
@@ -185,104 +294,174 @@ function MonitoringTables() {
                 </div>
             </div>
 
-            <div className={`${style.product} ${style.mt_4}`}>
-                <h2>📈 Останні вимірювання ({totalMeasurementsEntries})</h2>
-                {measurementsQuery.isFetching && (
-                    <div style={{ color: "blue" }}>
-                        Updating Measurements...
+            <div className={style["table-section"]}>
+                <div className={style["table-section__header"]}>
+                    <h2 className={style["table-section__title"]}>
+                        Останні вимірювання ({totalMeasurementsEntries})
+                    </h2>
+                    <div className={style["table-section__controls"]}>
+                        <input
+                            type="text"
+                            placeholder="Пошук по ID станції (Enter)..."
+                            className={style["table-section__search-input"]}
+                            value={measurementSearch}
+                            onChange={(e) =>
+                                setMeasurementSearch(e.target.value)
+                            }
+                            onKeyDown={handleMeasurementSearch}
+                        />
+                        {measurementQuery && (
+                            <button
+                                className={style["table-section__clear-btn"]}
+                                onClick={() => {
+                                    setMeasurementSearch("");
+                                    setMeasurementQuery("");
+                                    setMeasurementsPage(1);
+                                }}
+                            >
+                                Clear
+                            </button>
+                        )}
                     </div>
-                )}
-                <div style={{ overflowX: "scroll" }}>
-                    <div style={{ minWidth: 780 }}>
-                        <div className={style.product__header}>
-                            <div style={{ width: "150px" }}>
-                                <p>ID Станції</p>
+                </div>
+
+                <div className={style["data-table"]}>
+                    <div className={style["data-table__inner"]}>
+                        <div className={style["data-table__header"]}>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w120"]}`}
+                            >
+                                ID Станції
                             </div>
-                            <div style={{ width: "180px" }}>
-                                <p>Час Вимірювання</p>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w150"]}`}
+                            >
+                                Час
                             </div>
-                            <div style={{ width: "100px" }}>
-                                <p>Забруднювач</p>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w300"]}`}
+                            >
+                                Показники
                             </div>
-                            <div style={{ width: "100px" }}>
-                                <p>Значення</p>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w100"]}`}
+                            >
+                                Джерело
                             </div>
-                            <div style={{ width: "100px" }}>
-                                <p>Одиниця</p>
+                            <div
+                                className={`${style["data-table__cell"]} ${style["data-table__cell--w200"]}`}
+                            >
+                                ID Запису
                             </div>
                         </div>
 
                         {measurements.length > 0 ? (
-                            measurements.map((measurement, idx) => (
+                            measurements.map((measurement) => (
                                 <div
-                                    className={style.product__content}
-                                    key={measurement._id || idx}
+                                    className={style["data-table__row"]}
+                                    key={measurement._id}
                                 >
-                                    <div style={{ width: "150px" }}>
-                                        <p>{measurement.station_id}</p>
+                                    <div
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w120"]}`}
+                                    >
+                                        {measurement.station_id}
                                     </div>
-                                    <div style={{ width: "180px" }}>
+                                    <div
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w150"]} ${style["data-table__cell--text-sm"]}`}
+                                    >
                                         {new Date(
                                             measurement.measurement_time
-                                        ).toLocaleTimeString("uk-UA", {
-                                            year: "numeric",
-                                            month: "2-digit",
-                                            day: "2-digit",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                        })}
+                                        ).toLocaleString("uk-UA")}
                                     </div>
-                                    {measurement.pollutants[0] ? (
-                                        <>
-                                            <div style={{ width: "100px" }}>
-                                                <p>
-                                                    {
-                                                        measurement
-                                                            .pollutants[0]
-                                                            .pollutant
-                                                    }
-                                                </p>
-                                            </div>
-                                            <div style={{ width: "100px" }}>
-                                                <p>
-                                                    {measurement.pollutants[0].value.toFixed(
-                                                        2
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <div style={{ width: "100px" }}>
-                                                <p>
-                                                    {
-                                                        measurement
-                                                            .pollutants[0].unit
-                                                    }
-                                                </p>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div style={{ width: "300px" }}>
-                                            <p>Немає даних про забруднювачі</p>
+                                    <div
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w300"]}`}
+                                    >
+                                        <div
+                                            className={
+                                                style["data-table__tags-list"]
+                                            }
+                                        >
+                                            {measurement.pollutants &&
+                                            measurement.pollutants.length >
+                                                0 ? (
+                                                measurement.pollutants.map(
+                                                    (p, idx) => (
+                                                        <span
+                                                            key={idx}
+                                                            className={
+                                                                style[
+                                                                    "data-table__tag"
+                                                                ]
+                                                            }
+                                                        >
+                                                            <b>
+                                                                {p.pollutant}:
+                                                            </b>{" "}
+                                                            {p.value.toFixed(1)}{" "}
+                                                            {p.unit}
+                                                        </span>
+                                                    )
+                                                )
+                                            ) : (
+                                                <span
+                                                    className={`${style["data-table__cell--text-muted"]} ${style["data-table__cell--text-sm"]}`}
+                                                >
+                                                    Дані відсутні
+                                                </span>
+                                            )}
                                         </div>
-                                    )}
+                                    </div>
+                                    <div
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w100"]}`}
+                                    >
+                                        <span
+                                            className={`${
+                                                style[
+                                                    "data-table__source-badge"
+                                                ]
+                                            } ${
+                                                style[
+                                                    `data-table__source-badge--${
+                                                        measurement.metadata
+                                                            ?.source ===
+                                                        "SaveEcoBot"
+                                                            ? "eco"
+                                                            : "manual"
+                                                    }`
+                                                ]
+                                            }`}
+                                        >
+                                            {measurement.metadata?.source ||
+                                                "manual"}
+                                        </span>
+                                    </div>
+                                    <div
+                                        className={`${style["data-table__cell"]} ${style["data-table__cell--w200"]} ${style["data-table__cell--text-sm"]} ${style["data-table__cell--text-light"]}`}
+                                    >
+                                        {measurement._id}
+                                    </div>
                                 </div>
                             ))
                         ) : (
-                            <div
-                                className={style.product__content}
-                                style={{ textAlign: "center", padding: "20px" }}
-                            >
+                            <div className={style["data-table__empty"]}>
                                 <p>Вимірювання не знайдено.</p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className={style.pagination}>
-                    <div className={style.pagination__block}>
+                <div className={style["table-section__pagination"]}>
+                    <div className={style["table-section__pagination-wrapper"]}>
                         {measurementsPagination && (
-                            <TablePaginationInfo
-                                info={measurementsPagination}
-                            />
+                            <div
+                                className={
+                                    style["table-section__pagination-info"]
+                                }
+                            >
+                                <TablePaginationInfo
+                                    info={measurementsPagination}
+                                />
+                            </div>
                         )}
                         <Stack spacing={2}>
                             <Pagination
