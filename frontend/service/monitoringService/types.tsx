@@ -54,3 +54,20 @@ export interface ApiResponse<T> {
     pagination?: PaginationInfo;
     error?: string;
 }
+
+export interface EcoTaxRequest {
+    pollutant: string;
+    object_type: string;
+    Mi: number;
+    Rate: number;
+    K_time: number;
+    K_terr: number;
+    K_benefit: number;
+}
+
+export interface EcoTaxResult {
+    _id: string;
+    pollutant: string;
+    result_tax: number;
+    createdAt: string;
+}

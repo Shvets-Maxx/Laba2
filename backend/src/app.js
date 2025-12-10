@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import connectDB from "./config/DATABASE.js";
 import { errorLogger, errorHandler } from "./middleware/error.js";
-
+import ecoTaxRoutes from "./routes/ecoTax.js";
 // Імпорт маршрутів
 import stationsRoutes from "./routes/stations.js";
 import measurementsRoutes from "./routes/measurements.js";
@@ -54,6 +54,12 @@ if (process.env.NODE_ENV === "development") {
 // ============================================================================
 // МАРШРУТИ
 // ============================================================================
+
+//ecoTaxRoutes
+app.use("/api/stations", stationsRoutes);
+app.use("/api/measurements", measurementsRoutes);
+app.use("/api/saveecobot", saveEcoBotRoutes);
+app.use("/api/ecotax", ecoTaxRoutes); // <--- Додаємо роут екоподатку
 
 // Головний маршрут
 app.get("/", (req, res) => {

@@ -1,5 +1,11 @@
 import { apiClient } from "../api/apiClient";
-import type { Station, Measurement, ApiResponse } from "./types";
+import type {
+    Station,
+    Measurement,
+    ApiResponse,
+    EcoTaxRequest,
+    EcoTaxResult,
+} from "./types";
 
 const ROWS_PER_PAGE = 5;
 
@@ -25,5 +31,12 @@ export const measurementsRoutes = async (
 
 export const syncSaveEcoBot = async (): Promise<any> => {
     const response = await apiClient.get("/api/saveecobot/sync");
+    return response.data;
+};
+
+export const calculateEcoTax = async (
+    data: EcoTaxRequest
+): Promise<ApiResponse<EcoTaxResult>> => {
+    const response = await apiClient.post("/api/ecotax/calculate", data);
     return response.data;
 };

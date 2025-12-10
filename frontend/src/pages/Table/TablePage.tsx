@@ -17,6 +17,7 @@ import type {
     Measurement,
     PaginationInfo,
 } from "../../../service/monitoringService/types";
+import { useNavigate } from "react-router-dom";
 
 const TablePaginationInfo: React.FC<{ info: PaginationInfo }> = ({ info }) => {
     const { page, limit, total } = info;
@@ -38,6 +39,8 @@ function MonitoringTables() {
 
     const [measurementSearch, setMeasurementSearch] = useState("");
     const [measurementQuery, setMeasurementQuery] = useState("");
+
+    const naviagte = useNavigate();
 
     const stationsQuery = useStationsRoutes(stationsPage, stationQuery);
     const measurementsQuery = useMeasurementsRoutes(
@@ -106,15 +109,25 @@ function MonitoringTables() {
                 <h1 className={style["monitoring-page__title"]}>
                     Моніторинг Якості Повітря
                 </h1>
-                <button
-                    onClick={() => syncSaveEcoBot()}
-                    disabled={isSyncing}
-                    className={style["monitoring-page__btn"]}
-                >
-                    {isSyncing
-                        ? "Синхронізація..."
-                        : "Синхронізувати SaveEcoBot"}
-                </button>
+                <div>
+                    <button
+                        onClick={() => syncSaveEcoBot()}
+                        disabled={isSyncing}
+                        className={style["monitoring-page__btn"]}
+                        style={{ marginRight: " 16px", background: "grey" }}
+                    >
+                        {isSyncing
+                            ? "Синхронізація..."
+                            : "Синхронізувати SaveEcoBot"}
+                    </button>
+                    <button
+                        onClick={() => naviagte("/ecotax")}
+                        disabled={isSyncing}
+                        className={style["monitoring-page__btn"]}
+                    >
+                        Калькулятор
+                    </button>
+                </div>
             </div>
 
             <div className={style["table-section"]}>
